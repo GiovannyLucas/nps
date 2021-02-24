@@ -22,6 +22,6 @@ export class UserController {
       })
     )
 
-    return response.send(user)
+    return response.status(201).send(user)
   }
 }

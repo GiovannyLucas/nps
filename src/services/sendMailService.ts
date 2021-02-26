@@ -1,5 +1,4 @@
 import nodemailer, { Transporter } from "nodemailer";
-
 import fs from "fs";
 import hbs from "handlebars";
 

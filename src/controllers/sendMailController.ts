@@ -16,22 +16,19 @@ export class SendMailController {
     const surveysRepository = getCustomRepository(SurveysRepository);
     const surveysUsersRepository = getCustomRepository(SurveysUsersRepository);
 
-    const userExists = await usersRepository.findOne({ email });
+    const userExists = await usersRepository.indexUserByEmail(email);
 
     if (!userExists) {
       throw new AppError('Users does not exists!');
     }
 
-    const surveyExists = await surveysRepository.findOne({ id: survey_id });
+    const surveyExists = await surveysRepository.indexSurvey(survey_id);
 
     if (!surveyExists) {
       throw new AppError('Survey does not exists!');
     }
 
-    const surveyUserExists = await surveysUsersRepository.findOne({
-      where: { user_id: userExists.id, value: null },
-      relations: ['user', 'survey']
-    })
+    const surveyUserExists = await surveysUsersRepository.indexSurveyUserByUserAndAnswered(userExists.id)
 
     const variables = {
       name: userExists.name,
@@ -48,15 +45,14 @@ export class SendMailController {
       variables.id = surveyUserExists.id
 
       await sendMailService.execute(email, surveyExists.title, variables, npsPath)
+
       return response.json(surveyUserExists)
     }
 
-    const surveyUser = await surveysUsersRepository.save(
-      surveysUsersRepository.create({
-        user_id: userExists.id,
-        survey_id
-      })
-    );
+    const surveyUser = await surveysUsersRepository.createSurveyUser({
+      user_id: userExists.id,
+      survey_id
+    });
 
     variables.id = surveyUser.id
 

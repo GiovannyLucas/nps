@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-
 import { AppError } from "../errors/appError";
 import { SurveysUsersRepository } from "../repositories/surveysUsersRepository";
 import { getCustomRepository } from "typeorm";
@@ -12,9 +11,7 @@ export class AnswerController {
 
     const surveysUsersRepository = getCustomRepository(SurveysUsersRepository);
 
-    const surveyUser = await surveysUsersRepository.findOne({
-      id: String(u)
-    })
+    const surveyUser = await surveysUsersRepository.indexSurveyUser(String(u));
 
     if (!surveyUser) {
       throw new AppError('Survey does not exists!');

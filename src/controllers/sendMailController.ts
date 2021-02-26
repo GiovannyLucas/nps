@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 
+import { AppError } from "../errors/appError";
 import { SurveysRepository } from "../repositories/surveysRepository";
 import { SurveysUsersRepository } from "../repositories/surveysUsersRepository";
 import { UsersRepository } from "../repositories/usersRepository";
@@ -18,36 +19,34 @@ export class SendMailController {
     const userExists = await usersRepository.findOne({ email });
 
     if (!userExists) {
-      return response.status(400).send({
-        error: 'Users does not exists!'
-      });
+      throw new AppError('Users does not exists!');
     }
 
     const surveyExists = await surveysRepository.findOne({ id: survey_id });
 
     if (!surveyExists) {
-      return response.status(400).send({
-        error: 'Survey does not exists!'
-      });
+      throw new AppError('Survey does not exists!');
     }
-
-    const variables = {
-      name: userExists.name,
-      title: surveyExists.title,
-      description: surveyExists.description,
-      user_id: userExists.id,
-      host: process.env.URL_MAIL,
-      route: 'answers'
-    }
-
-    const npsPath = resolve(__dirname, '..', 'views', 'emails', 'npsMail.hbs');
 
     const surveyUserExists = await surveysUsersRepository.findOne({
       where: { user_id: userExists.id, value: null },
       relations: ['user', 'survey']
     })
 
+    const variables = {
+      name: userExists.name,
+      title: surveyExists.title,
+      description: surveyExists.description,
+      id: '',
+      host: process.env.URL_MAIL,
+      route: 'answers'
+    }
+
+    const npsPath = resolve(__dirname, '..', 'views', 'emails', 'npsMail.hbs');
+
     if (surveyUserExists) {
+      variables.id = surveyUserExists.id
+
       await sendMailService.execute(email, surveyExists.title, variables, npsPath)
       return response.json(surveyUserExists)
     }
@@ -59,11 +58,7 @@ export class SendMailController {
       })
     );
 
-
-
-
-
-
+    variables.id = surveyUser.id
 
     await sendMailService.execute(email, surveyExists.title, variables, npsPath);
 
